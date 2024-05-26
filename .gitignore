@@ -1,0 +1,6 @@
+.DS_Store
+/.idea/
+/.history/
+__pycache__
+public
+resources
