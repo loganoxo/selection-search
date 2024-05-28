@@ -412,7 +412,7 @@
     var qsToolbar = null; // 快搜划词工具条
     var qsMainBox = null; // 快搜主窗口
     var qsSettingBox = null; // 快搜设置窗口
-
+    var selectionBak_qs = null;
     ///////////////////////////////////////////////////////////////////
     // 功能函数
     ///////////////////////////////////////////////////////////////////
@@ -515,6 +515,9 @@
     // 点击划词工具条搜索引擎.
     function openEngineOnClickToolbar(engine, event) {
         var query = getSelection();
+        if (!query) {
+            query = selectionBak_qs;
+        }
         openEngineOnClick(engine, query, event);
     }
 
@@ -549,21 +552,6 @@
             if (!engine.enable) return; // 此处return搭配forEach, 请勿改为其他形式循环
             var ele = document.createElement("div");
             ele.className = "engine-name";
-
-            // var aaaaa = document.createElement("a");
-            // aaaaa.className = "engine-name";
-            // aaaaa.innerHTML = engine.name;
-            // aaaaa.target = "#";
-            // aaaaa.setAttribute("href", "javascript:void(0);");
-            // aaaaa.setAttribute("ref", "noopener noreferrer");
-            // aaaaa.addEventListener(
-            //     "click",
-            //     function (e) {
-            //         openEngineOnClickToolbar(engine, e);
-            //     },
-            //     false,
-            // );
-            // ele.appendChild(aaaaa);
             var icon = document.createElement("img");
             icon.id = "qs-toolbar-icon-" + index;
             icon.className = "qs-toolbar-icon";
@@ -576,13 +564,9 @@
                 function (e) {
                     openEngineOnClickToolbar(engine, e);
                 },
-                false,
+                true,
             );
             ele.appendChild(icon);
-            // icon.onload = (e) => {
-            //     icon.style.display = "";
-            //     aaaaa.style.display = "none";
-            // };
 
             toolbar.appendChild(ele);
         });
@@ -701,52 +685,8 @@
             success(text);
         };
 
-        // if (!button) {
         funCopy(content);
         return;
-        // }
-
-        // 事件绑定
-        // button.addEventListener('click', function (event) {
-        //     var strCopy = content;
-        //     if (content && content.tagName) {
-        //         strCopy = content.textContent || content.value;
-        //     }
-        //     // 复制的文字内容
-        //     if (!strCopy) {
-        //         return;
-        //     }
-
-        //     funCopy(strCopy, function () {
-        //         // 复制成功提示
-        //         var eleTips = document.createElement('span');
-        //         eleTips.className = 'text-popup';
-        //         eleTips.innerHTML = '复制成功';
-        //         document.body.appendChild(eleTips);
-        //         // 事件
-        //         eleTips.addEventListener('animationend', function() {
-        //             eleTips.parentNode.removeChild(eleTips);
-        //         });
-        //         // For IE9
-        //         if (!history.pushState) {
-        //             setTimeout(function () {
-        //                 eleTips.parentNode.removeChild(eleTips);
-        //             }, 1000);
-        //         }
-        //         eleTips.style.left = (event.pageX - eleTips.clientWidth / 2) + 'px';
-        //         eleTips.style.top = (event.pageY - eleTips.clientHeight) + 'px';
-        //     });
-        // });
-
-        // var strStyle = '.text-popup { animation: textPopup 1s both; -ms-transform: translateY(-20px); color: #01cf97; user-select: none; white-space: nowrap; position: absolute; z-index: 99; }@keyframes textPopup {0%, 100% { opacity: 0; } 5% { opacity: 1; } 100% { transform: translateY(-50px); }}'
-
-        // var eleStyle = document.querySelector('#popupStyle');
-        // if (!eleStyle) {
-        //     eleStyle = document.createElement('style');
-        //     eleStyle.id = 'popupStyle';
-        //     eleStyle.innerHTML = strStyle;
-        //     document.head.appendChild(eleStyle);
-        // }
     };
 
     //
@@ -754,6 +694,7 @@
     //
 
     function initQuickSearch() {
+        selectionBak_qs = null;
         shadowHost = document.createElement("div");
         document.body.appendChild(shadowHost);
         shadowRoot = shadowHost.attachShadow({mode: 'closed'});
@@ -766,10 +707,13 @@
     // 百度等网页会在不刷新页面的情况下改变网页内容, 导致quick search除了js脚本之外的东东全部没了.
     // 此函数用于确保quick search处于可用状态, 需在toolbar或mainbox等窗口每次显示时调用.
     function ensureQuickSearchAlive() {
-        var css = document.querySelector("#qs-css");
-        var mainbox = document.querySelector("#qs-mainbox");
-        if (!css || !mainbox) {
+        if (!shadowHost || !shadowRoot) {
             initQuickSearch();
+        } else {
+            var css = shadowRoot.getElementById("qs-css");
+            if (!css) {
+                initQuickSearch();
+            }
         }
     }
 
@@ -791,6 +735,7 @@
             var target = e.target;
             // 隐藏工具条
             if (isToolbarVisual() && !qsToolbar.contains(target) && !shadowHost.contains(target)) {
+                selectionBak_qs = null;
                 hideToolbar();
             }
         },
@@ -801,14 +746,17 @@
         "mouseup",
         function (e) {
             var target = e.target;
-            var selection = "";
+            var selection = getSelection();
+            if (!qsToolbar.contains(target) && !shadowHost.contains(target)) {
+                selectionBak_qs = selection;
+            }
             // 显示/隐藏工具条
             if (isAllowToolbar(e)) {
-                selection = getSelection();
                 if (selection && !isToolbarVisual()) {
                     showToolbar(e);
                 }
-                if (!selection && isToolbarVisual()) {
+                if (!selection && isToolbarVisual() && !qsToolbar.contains(target) && !shadowHost.contains(target)) {
+                    selectionBak_qs = null;
                     hideToolbar();
                 }
             }
@@ -816,29 +764,14 @@
             // 划词时自动复制文本到剪贴板
             if (
                 conf.autoCopyToClipboard &&
-                target.tagName != "INPUT" &&
-                target.tagName != "TEXTAREA" &&
+                target.tagName !== "INPUT" &&
+                target.tagName !== "TEXTAREA" &&
                 !qsMainBox.contains(target) &&
                 !qsSettingBox.contains(target)
             ) {
-                selection = getSelection();
                 if (selection) {
                     GM.setClipboard(selection, "text/plain");
                 }
-            }
-        },
-        true,
-    );
-
-    // 有时候selectionchange发生在mouseup之后, 导致没有selection时toolbar依然显示.
-    // 故再添加selectionchange事件以隐藏toolbar.
-    // 由于在鼠标划词拖动过程中会不停触发selectionchange事件, 所以最好不要以此事件来显示/调整toolbar位置.
-    document.addEventListener(
-        "selectionchange",
-        function (e) {
-            var selection = getSelection();
-            if (!selection && isToolbarVisual()) {
-                hideToolbar();
             }
         },
         true,
