@@ -582,7 +582,6 @@
     // 显示划词工具条
     function showToolbar(event) {
         ensureQuickSearchAlive();
-
         if (!qsToolbar || isToolbarVisual()) {
             return;
         }
