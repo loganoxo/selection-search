@@ -1,23 +1,36 @@
 # EditorConfig is awesome: https://EditorConfig.org
 
-# 根目录的配置文件，表示这个配置文件是项目的根配置文件。如果设置为 true，编辑器会从该文件开始，并停止向上搜索其他 .editorconfig 文件
+# root = false：配置文件会继续继承父目录的 .editorconfig 配置;允许多个目录共享统一的配置文件，尤其在大型项目中，可以避免为每个子目录都定义完整的配置
+# root = true：配置文件不再继承任何父目录的 .editorconfig 配置，成为根配置文件;这意味着，在该目录及其子目录中，EditorConfig 将只使用当前目录中的设置
 root = true
 
 # 匹配全部文件
 [*]
-indent_style = space # 空格缩进,可选"space"、"tab"
-indent_size = 4 # 缩进空格为4个
-end_of_line = lf # 结尾换行符，可选"lf换行符(unix默认\n)"、"cr回车符(\n)"、"crlf回车换行符(windows默认\r\n)"
-charset = utf-8 # 文件编码是 utf-8
-trim_trailing_whitespace = true # 不保留行末的空格
-insert_final_newline = true # 文件末尾添加一个空行
+# 空格缩进,可选"space"、"tab"
+indent_style = space
+# 缩进空格为4个
+indent_size = 4
+# 定义用于表示制表符的列数的整数,默认为indent_size的值,通常不需要指定
+tab_width = 4
+# 结尾换行符，可选"lf换行符(unix默认\n)"、"cr回车符(\n)"、"crlf回车换行符(windows默认\r\n)"
+end_of_line = lf
+# 文件编码是 utf-8
+charset = utf-8
+# 不保留行末的空格
+trim_trailing_whitespace = true
+# 文件末尾添加一个空行
+insert_final_newline = true
 
-[*.{js,html,less,css,json}] # 对所有 js html, less, css, json 文件生效
-indent_style = space # 空格缩进,可选"space"、"tab"
+# 对所有 md 文件生效
+[*.md]
+# 保留行末的空格,markdown中行尾两个空格是严格模式下的换行
+trim_trailing_whitespace = false
 
-[package.json] # 对 package.json 生效
+# 对所有 js html, less, css, json 文件生效
+[*.{js,html,less,css,json}]
+# 取消前面或从父级目录继承的indent_size
+# indent_size = unset
+
+# 对 package.json 生效
+[package.json]
 indent_size = 2 # 使用2个空格缩进
-
-
-[*.md] # 对所有 md 文件生效
-trim_trailing_whitespace = false # 保留行末的空格
